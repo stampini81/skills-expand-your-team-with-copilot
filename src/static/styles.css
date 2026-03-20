@@ -1,9 +1,9 @@
 /* Color palette */
 :root {
-  /* Primary colors */
-  --primary: #1a237e;
-  --primary-light: #534bae;
-  --primary-dark: #000051;
+  /* Primary colors - School lime green & white */
+  --primary: #43a047;
+  --primary-light: #76d275;
+  --primary-dark: #00701a;
   --primary-text: #ffffff;
 
   /* Secondary colors */
@@ -13,7 +13,7 @@
   --secondary-text: #ffffff;
 
   /* Neutral colors */
-  --background: #f5f5f5;
+  --background: #ffffff;
   --surface: #ffffff;
   --text-primary: #333333;
   --text-secondary: #666666;
@@ -217,7 +217,9 @@ section h3 {
   margin-top: auto;
   padding-top: 10px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
 }
 
 /* Activity Tag */
@@ -225,8 +227,8 @@ section h3 {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: #e8eaf6;
-  color: #3949ab;
+  background: #e8f5e9;
+  color: #2e7d32;
   font-size: 0.65rem;
   font-weight: bold;
   padding: 2px 6px;
@@ -315,6 +317,25 @@ section h3 {
   letter-spacing: 0.3px;
   text-transform: uppercase;
   border: none;
+}
+
+/* Share button */
+.share-button {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  letter-spacing: 0.3px;
+}
+
+.share-button:hover {
+  background-color: var(--primary);
+  color: white;
 }
 
 button {
