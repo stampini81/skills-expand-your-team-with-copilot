@@ -19,6 +19,7 @@
         <img src="https://octodex.github.com/images/gracehoppertocat.jpg" alt="Grace Hopper Octocat" title="Grace Hoppertocat" />
       </div>
       <div id="user-controls">
+        <button id="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
         <div id="user-status">
           <button id="login-button" class="icon-button">
             <span class="user-icon">👤</span>
@@ -105,6 +106,28 @@
                   After School
                 </button>
                 <button class="time-filter" data-time="weekend">Weekend</button>
+              </div>
+            </div>
+
+            <!-- Difficulty Filter -->
+            <div class="filter-container difficulty-filter-container">
+              <div class="filter-label">Filter by difficulty:</div>
+              <div class="difficulty-filters" role="group" aria-label="Filter by difficulty level">
+                <button class="difficulty-filter active" data-difficulty="">
+                  Show All
+                </button>
+                <button class="difficulty-filter" data-difficulty="all_levels">
+                  All Levels
+                </button>
+                <button class="difficulty-filter" data-difficulty="Beginner">
+                  Beginner
+                </button>
+                <button class="difficulty-filter" data-difficulty="Intermediate">
+                  Intermediate
+                </button>
+                <button class="difficulty-filter" data-difficulty="Advanced">
+                  Advanced
+                </button>
               </div>
             </div>
           </aside>
