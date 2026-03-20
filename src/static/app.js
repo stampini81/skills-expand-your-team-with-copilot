@@ -48,6 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
 
+  // Dark mode toggle
+  const darkModeToggle = document.getElementById("dark-mode-toggle");
+
+  // Toast notification container
+  const toastContainer = document.getElementById("toast-container");
+
   // Activity categories with corresponding colors
   const activityTypes = {
     sports: { label: "Sports", color: "#e8f5e9", textColor: "#2e7d32" },
@@ -68,12 +74,122 @@ document.addEventListener("DOMContentLoaded", () => {
   // Authentication state
   let currentUser = null;
 
+  // Favorites state (persisted in localStorage)
+  let favorites = {};
+  try {
+    favorites = JSON.parse(localStorage.getItem("activityFavorites") || "{}");
+  } catch (e) {
+    favorites = {};
+  }
+
+  // Helper to escape HTML special characters for use in attributes and text
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
   // Time range mappings for the dropdown
   const timeRanges = {
     morning: { start: "06:00", end: "08:00" }, // Before school hours
     afternoon: { start: "15:00", end: "18:00" }, // After school hours
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
+
+  // ── Toast Notification System ──────────────────────────────────────────────
+
+  function showToast(message, type = "info") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        toast.classList.add("show");
+      });
+    });
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 350);
+    }, 3000);
+  }
+
+  // ── Dark Mode ──────────────────────────────────────────────────────────────
+
+  function applyDarkMode(enabled) {
+    if (enabled) {
+      document.body.classList.add("dark-mode");
+      darkModeToggle.textContent = "☀️ Light Mode";
+    } else {
+      document.body.classList.remove("dark-mode");
+      darkModeToggle.textContent = "🌙 Dark Mode";
+    }
+  }
+
+  function initDarkMode() {
+    const saved = localStorage.getItem("darkMode");
+    applyDarkMode(saved === "true");
+  }
+
+  darkModeToggle.addEventListener("click", () => {
+    const isNowDark = !document.body.classList.contains("dark-mode");
+    localStorage.setItem("darkMode", isNowDark);
+    applyDarkMode(isNowDark);
+    showToast(isNowDark ? "Dark mode enabled" : "Light mode enabled", "info");
+  });
+
+  // ── Favorites System ───────────────────────────────────────────────────────
+
+  function saveFavorites() {
+    localStorage.setItem("activityFavorites", JSON.stringify(favorites));
+  }
+
+  function toggleFavorite(activityName) {
+    if (favorites[activityName]) {
+      delete favorites[activityName];
+      showToast(`Removed "${activityName}" from favorites`, "info");
+    } else {
+      favorites[activityName] = true;
+      showToast(`Added "${activityName}" to favorites ❤️`, "success");
+    }
+    saveFavorites();
+
+    // Update the heart icon on the card without re-rendering
+    const btn = document.querySelector(`.favorite-btn[data-activity="${CSS.escape(activityName)}"]`);
+    if (btn) {
+      btn.textContent = favorites[activityName] ? "❤️" : "🤍";
+      btn.classList.toggle("favorited", !!favorites[activityName]);
+      btn.setAttribute("aria-label", favorites[activityName] ? "Remove from favorites" : "Add to favorites");
+    }
+  }
+
+  // ── Social Sharing ─────────────────────────────────────────────────────────
+
+  function buildShareUrl(platform, activityName, description) {
+    const text = encodeURIComponent(`Check out "${activityName}" at Mergington High School! ${description}`);
+    const url = encodeURIComponent(window.location.href);
+
+    if (platform === "whatsapp") {
+      return `https://wa.me/?text=${text}%20${url}`;
+    } else if (platform === "twitter") {
+      return `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    } else if (platform === "facebook") {
+      return `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
+    }
+    return "#";
+  }
+
+  function handleShare(platform, activityName) {
+    const platformNames = { whatsapp: "WhatsApp", twitter: "Twitter/X", facebook: "Facebook" };
+    showToast(`Opening ${platformNames[platform]} to share "${activityName}"`, "info");
+  }
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -550,8 +666,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     activityCard.innerHTML = `
       ${tagHtml}
-      <h4>${name}</h4>
-      <p>${details.description}</p>
+      <h4>${escapeHtml(name)}</h4>
+      <p>${escapeHtml(details.description)}</p>
       <p class="tooltip">
         <strong>Schedule:</strong> ${formattedSchedule}
         <span class="tooltip-text">Regular meetings at this time throughout the semester</span>
@@ -564,11 +680,11 @@ document.addEventListener("DOMContentLoaded", () => {
             .map(
               (email) => `
             <li>
-              ${email}
+              ${escapeHtml(email)}
               ${
                 currentUser
                   ? `
-                <span class="delete-participant tooltip" data-activity="${name}" data-email="${email}">
+                <span class="delete-participant tooltip" data-activity="${escapeHtml(name)}" data-email="${escapeHtml(email)}">
                   ✖
                   <span class="tooltip-text">Unregister this student</span>
                 </span>
@@ -585,7 +701,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${
           currentUser
             ? `
-          <button class="register-button" data-activity="${name}" ${
+          <button class="register-button" data-activity="${escapeHtml(name)}" ${
                 isFull ? "disabled" : ""
               }>
             ${isFull ? "Activity Full" : "Register Student"}
@@ -601,12 +717,39 @@ document.addEventListener("DOMContentLoaded", () => {
           🔗 Share
         </button>
       </div>
+      <div class="social-share-buttons">
+        <a class="share-btn whatsapp" href="${buildShareUrl("whatsapp", name, details.description)}" target="_blank" rel="noopener noreferrer" data-platform="whatsapp" data-activity="${escapeHtml(name)}">
+          📱 WhatsApp
+        </a>
+        <a class="share-btn twitter" href="${buildShareUrl("twitter", name, details.description)}" target="_blank" rel="noopener noreferrer" data-platform="twitter" data-activity="${escapeHtml(name)}">
+          🐦 Twitter/X
+        </a>
+        <a class="share-btn facebook" href="${buildShareUrl("facebook", name, details.description)}" target="_blank" rel="noopener noreferrer" data-platform="facebook" data-activity="${escapeHtml(name)}">
+          👍 Facebook
+        </a>
+      </div>
+      <button class="favorite-btn ${favorites[name] ? "favorited" : ""}" data-activity="${escapeHtml(name)}" aria-label="${favorites[name] ? "Remove from favorites" : "Add to favorites"}">
+        ${favorites[name] ? "❤️" : "🤍"}
+      </button>
     `;
 
     // Add click handlers for delete buttons
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    // Add click handler for favorite button
+    const favoriteBtn = activityCard.querySelector(".favorite-btn");
+    favoriteBtn.addEventListener("click", () => {
+      toggleFavorite(name);
+    });
+
+    // Add click handlers for social share links
+    activityCard.querySelectorAll(".share-btn").forEach((link) => {
+      link.addEventListener("click", () => {
+        handleShare(link.dataset.platform, link.dataset.activity);
+      });
     });
 
     // Add click handler for register button (only when authenticated)
@@ -945,6 +1088,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
+  initDarkMode();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
